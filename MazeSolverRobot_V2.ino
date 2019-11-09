@@ -70,8 +70,8 @@ void loop()
     //Serial.println("Left");
     do {
       read_sensor_values();
-      analogWrite(ENA, 70); 
-      analogWrite(ENB, 90); 
+      analogWrite(ENA, 100);
+      analogWrite(ENB, 110);
       sharpLeftTurn();
     } while (error != 0);
 
@@ -79,16 +79,16 @@ void loop()
                                       // untill it detects straight path.
     //Serial.print("\t");
     //Serial.println("Right");
-    analogWrite(ENA, 70); 
-    analogWrite(ENB, 90); 
+    analogWrite(ENA, 100);
+    analogWrite(ENB, 110);
     forward();
     delay(200);
     stop_bot();
     read_sensor_values();
     if (error == 102) {
       do {
-        analogWrite(ENA, 70); 
-        analogWrite(ENB, 90); 
+        analogWrite(ENA, 100);
+        analogWrite(ENB, 110);
         sharpRightTurn();
         read_sensor_values();
       } while (error != 0);
@@ -97,8 +97,8 @@ void loop()
     //Serial.print("\t");
     //Serial.println("Sharp Left Turn");
     do {
-      analogWrite(ENA, 70); 
-      analogWrite(ENB, 90);
+      analogWrite(ENA, 100);
+      analogWrite(ENB, 110);
       sharpLeftTurn();
       read_sensor_values();
       if (error == 0) {
@@ -108,11 +108,12 @@ void loop()
     } while (error != 0);
   } else if (error == 103) {        // Make left turn untill it detects straight path or stop if dead end reached.
     if (flag == 0) {
-      analogWrite(ENA, 70); 
-      analogWrite(ENB, 90);
+      analogWrite(ENA, 100);
+      analogWrite(ENB, 110);
       forward();
-      delay(200);
+      delay(100);
       stop_bot();
+      delay(200);
       read_sensor_values();
       if (error == 103) {     /**** Dead End Reached, Stop! ****/
         stop_bot();
@@ -120,16 +121,16 @@ void loop()
 //        digitalWrite(ledPin2, HIGH);
         flag = 1;
       } else {        /**** Move Left ****/
-        analogWrite(ENA, 70); 
-        analogWrite(ENB, 90);
+        analogWrite(ENA, 100);
+        analogWrite(ENB, 110);
         sharpLeftTurn();
         delay(200);
         do {
           //Serial.print("\t");
           //Serial.println("Left Here");
           read_sensor_values();
-          analogWrite(ENA, 70);
-          analogWrite(ENB, 90);
+          analogWrite(ENA, 100);
+          analogWrite(ENB, 110);
           sharpLeftTurn();
         } while (error != 0);
       }
