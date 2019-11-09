@@ -7,13 +7,12 @@ int sensor4 = 9;      // Right most sensor
 // Initial Values of Sensors (Left to Right)
 int sensor[4] = {0, 0, 0, 0};
 
-// Motor Variables
-// Right
+// Right Motor
 int ENA = 3;
 int motorInput1 = 13;
 int motorInput2 = 7;
 
-// Left
+// Left Motor
 int motorInput3 = 6;
 int motorInput4 = 8;
 int ENB = 5;
@@ -49,13 +48,12 @@ void setup()
   pinMode(ENA, OUTPUT);
   pinMode(ENB, OUTPUT);
 
-//  pinMode(ledPin1, OUTPUT);
-//  pinMode(ledPin2, OUTPUT);
+  //pinMode(ledPin1, OUTPUT);
+  //pinMode(ledPin2, OUTPUT);
+  //digitalWrite(ledPin1, LOW);
+  //digitalWrite(ledPin2, LOW);
 
-//  digitalWrite(ledPin1, LOW);
-//  digitalWrite(ledPin2, LOW);
-
-  Serial.begin(9600);                     //setting serial monitor at a default baund rate of 9600
+  Serial.begin(9600);
   delay(500);
   Serial.println("Started !!");
   delay(1000);
@@ -63,11 +61,10 @@ void setup()
 void loop()
 {
   read_sensor_values();
-  
+
   Serial.println(error);
-  if (error == 100) {               // Make left turn untill it detects straight path
-    //Serial.print("\t");
-    //Serial.println("Left");
+  if (error == 100) {
+    // Make left turn untill it detects straight path
     do {
       read_sensor_values();
       analogWrite(ENA, 100);
@@ -75,10 +72,9 @@ void loop()
       sharpLeftTurn();
     } while (error != 0);
 
-  } else if (error == 101) {          // Make right turn in case of it detects only right path (it will go into forward direction in case of staright and right "|--")
-                                      // untill it detects straight path.
-    //Serial.print("\t");
-    //Serial.println("Right");
+  } else if (error == 101) {
+    // Make right turn in case it detects only right path (it will go into forward
+    // direction in case of staright and right "|--") untill it detects straight path.
     analogWrite(ENA, 100);
     analogWrite(ENB, 110);
     forward();
@@ -93,9 +89,9 @@ void loop()
         read_sensor_values();
       } while (error != 0);
     }
-  } else if (error == 102) {        // Make left turn untill it detects straight path
-    //Serial.print("\t");
-    //Serial.println("Sharp Left Turn");
+
+  } else if (error == 102) {
+    // Make left turn untill it detects straight path (U Turn)
     do {
       analogWrite(ENA, 100);
       analogWrite(ENB, 110);
@@ -106,28 +102,30 @@ void loop()
         delay(200);
       }
     } while (error != 0);
-  } else if (error == 103) {        // Make left turn untill it detects straight path or stop if dead end reached.
+
+  } else if (error == 103) {
+    // Make left turn untill it detects straight path or stop if dead end reached.
     if (flag == 0) {
       analogWrite(ENA, 100);
       analogWrite(ENB, 110);
       forward();
-      delay(100);
-      stop_bot();
       delay(200);
+      stop_bot();
       read_sensor_values();
-      if (error == 103) {     /**** Dead End Reached, Stop! ****/
+      if (error == 103) {
+        /**** Dead End Reached, Stop! ****/
         stop_bot();
-//        digitalWrite(ledPin1, HIGH);
-//        digitalWrite(ledPin2, HIGH);
+        //digitalWrite(ledPin1, HIGH);
+        //digitalWrite(ledPin2, HIGH);
         flag = 1;
-      } else {        /**** Move Left ****/
+
+      } else {
+        /**** Move Left ****/
         analogWrite(ENA, 100);
         analogWrite(ENB, 110);
         sharpLeftTurn();
         delay(200);
         do {
-          //Serial.print("\t");
-          //Serial.println("Left Here");
           read_sensor_values();
           analogWrite(ENA, 100);
           analogWrite(ENB, 110);
@@ -135,6 +133,7 @@ void loop()
         } while (error != 0);
       }
     }
+
   } else {
     calculate_pid();
     motor_control();
@@ -148,35 +147,47 @@ void read_sensor_values()
   sensor[2] = digitalRead(sensor3);
   sensor[3] = digitalRead(sensor4);
 
-  /*
-    Serial.print(sensor[0]);
-    Serial.print("\t");
-    Serial.print(sensor[1]);
-    Serial.print("\t");
-    Serial.print(sensor[2]);
-    Serial.print("\t");
-    Serial.println(sensor[3]);*/
-
+  // 1000
   if ((sensor[0] == 1) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 0))
     error = 3;
+
+  // 1100
   else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 0) && (sensor[3] == 0))
     error = 2;
+
+  // 0100
   else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 0) && (sensor[3] == 0))
     error = 1;
+
+  // 0110
   else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 0))
     error = 0;
+
+  // 0010
   else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 1) && (sensor[3] == 0))
     error = -1;
+
+  // 0011
   else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 1) && (sensor[3] == 1))
     error = -2;
+
+  // 0001
   else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 1))
     error = -3;
+
+  // 1110
   else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 0)) // Turn robot left side
     error = 100;
+
+  // 0111
   else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 1)) // Turn robot right side
     error = 101;
+
+  // 0000
   else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 0)) // Make U turn
     error = 102;
+
+  // 1111
   else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 1)) // Turn left side or stop
     error = 103;
 }
@@ -203,14 +214,8 @@ void motor_control()
   left_motor_speed = constrain(left_motor_speed, 0, 255);
   right_motor_speed = constrain(right_motor_speed, 0, 255);
 
-  /*Serial.print(PID_value);
-    Serial.print("\t");
-    Serial.print(left_motor_speed);
-    Serial.print("\t");
-    Serial.println(right_motor_speed);*/
-
-  analogWrite(ENA, right_motor_speed - 20); //Right Motor Speed
-  analogWrite(ENB, left_motor_speed);       //Left Motor Speed
+  analogWrite(ENA, right_motor_speed - 20);
+  analogWrite(ENB, left_motor_speed);
 
   //following lines of code are to make the bot move forward
   forward();
