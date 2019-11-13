@@ -18,7 +18,7 @@ int motorInput4 = 8;
 int ENB = 5;
 
 //Initial Speed of Motor
-int initial_motor_speed = 110;
+int initial_motor_speed = 85;
 
 // Output Pins for Led
 //int ledPin1 = A3;
@@ -67,24 +67,24 @@ void loop()
     // Make left turn untill it detects straight path
     do {
       read_sensor_values();
-      analogWrite(ENA, 100);
-      analogWrite(ENB, 110);
+      analogWrite(ENA, 85);
+      analogWrite(ENB, 85);
       sharpLeftTurn();
     } while (error != 0);
 
   } else if (error == 101) {
     // Make right turn in case it detects only right path (it will go into forward
     // direction in case of staright and right "|--") untill it detects straight path.
-    analogWrite(ENA, 100);
-    analogWrite(ENB, 110);
+    analogWrite(ENA, 70);
+    analogWrite(ENB, 90);
     forward();
     delay(200);
     stop_bot();
     read_sensor_values();
     if (error == 102) {
       do {
-        analogWrite(ENA, 100);
-        analogWrite(ENB, 110);
+        analogWrite(ENA, 85);
+        analogWrite(ENB, 85);
         sharpRightTurn();
         read_sensor_values();
       } while (error != 0);
@@ -94,7 +94,7 @@ void loop()
     // Make left turn untill it detects straight path (U Turn)
     do {
       analogWrite(ENA, 100);
-      analogWrite(ENB, 110);
+      analogWrite(ENB, 90);
       sharpLeftTurn();
       read_sensor_values();
       if (error == 0) {
@@ -106,8 +106,8 @@ void loop()
   } else if (error == 103) {
     // Make left turn untill it detects straight path or stop if dead end reached.
     if (flag == 0) {
-      analogWrite(ENA, 100);
-      analogWrite(ENB, 110);
+      analogWrite(ENA, 70);
+      analogWrite(ENB, 90);
       forward();
       delay(200);
       stop_bot();
@@ -121,14 +121,14 @@ void loop()
 
       } else {
         /**** Move Left ****/
-        analogWrite(ENA, 100);
-        analogWrite(ENB, 110);
+        analogWrite(ENA, 85);
+        analogWrite(ENB, 85);
         sharpLeftTurn();
         delay(200);
         do {
           read_sensor_values();
-          analogWrite(ENA, 100);
-          analogWrite(ENB, 110);
+          analogWrite(ENA, 85);
+          analogWrite(ENB, 85);
           sharpLeftTurn();
         } while (error != 0);
       }
