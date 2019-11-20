@@ -6,6 +6,10 @@ int sensor4 = 9;      // Right most sensor
 
 // Initial Values of Sensors (Left to Right)
 int sensor[4] = {0, 0, 0, 0};
+char path[20];
+char optPath[20];
+char flippedOptPath[20];
+int i, j = 0;
 
 // Right Motor
 int ENA = 3;
@@ -31,8 +35,103 @@ float Kd = 15;
 
 float error = 0, P = 0, I = 0, D = 0, PID_value = 0;
 float previous_error = 0, previous_I = 0;
-
 int flag = 0;
+int arrSize = 20;
+
+void flipOptimizedPath() {
+  int k = 0;
+  for (int i = arrSize - 1; i >= 0; i--) {
+    if (optPath[i] == 'S')
+      flippedOptPath[k++] = 'N';
+    else if (optPath[i] == 'N')
+      flippedOptPath[k++] = 'S';
+    else if (optPath[i] == 'E')
+      flippedOptPath[k++] = 'W';
+    else if (optPath[i] == 'W')
+      flippedOptPath[k++] = 'E';
+  }
+}
+
+void optimizePath() {
+  int i = 0;
+  int index = 0;
+  while (true) {
+    if (arrSize == index)
+      break;
+    if (i == arrSize) {
+      arrSize = index;
+      i = index = 0;
+      continue;
+    }
+    optPath[index] = arr[i];
+
+    if (arr[i] == 'S' && arr[i + 1] == 'N' || arr[i] == 'N' && arr[i + 1] == 'S') {
+      i += 2;
+      optPath[index] = arr[i];
+    }
+    else if (arr[i] == 'W' && arr[i + 1] == 'E' || arr[i] == 'E' && arr[i + 1] == 'W') {
+      i += 2;
+      optPath[index] = arr[i];
+    }
+
+    i++;
+    index++;
+  }
+}
+
+void updatePath(prevDirection, currState) {
+  if (prevDirection == 'N' && currState == "right") {
+    path[i++] = 'E';
+  }
+  else if (prevDirection == 'N' && currState == "left") {
+    path[i++] = 'W';
+  }
+  else if (prevDirection == 'N' && currState == "reverse") {
+    path[i++] = 'S';
+  }
+  else if (prevDirection == 'N' && currState == "forward") {
+    path[i++] = 'N';
+  }
+
+  else if (prevDirection == 'S' && currState == "right") {
+    path[i++] = 'W';
+  }
+  else if (prevDirection == 'S' && currState == "left") {
+    path[i++] = 'E';
+  }
+  else if (prevDirection == 'S' && currState == "reverse") {
+    path[i++] = 'N';
+  }
+  else if (prevDirection == 'S' && currState == "forward") {
+    path[i++] = 'S';
+  }
+
+  else if (prevDirection == 'E' && currState == "right") {
+    path[i++] = 'S';
+  }
+  else if (prevDirection == 'E' && currState == "left") {
+    path[i++] = 'N';
+  }
+  else if (prevDirection == 'E' && currState == "reverse") {
+    path[i++] = 'W';
+  }
+  else if (prevDirection == 'E' && currState == "forward") {
+    path[i++] = 'E';
+  }
+
+  else if (prevDirection == 'W' && currState == "right") {
+    path[i++] = 'N';
+  }
+  else if (prevDirection == 'W' && currState == "left") {
+    path[i++] = 'S';
+  }
+  else if (prevDirection == 'W' && currState == "reverse") {
+    path[i++] = 'E';
+  }
+  else if (prevDirection == 'W' && currState == "forward") {
+    path[i++] = 'W';
+  }
+}
 
 void setup()
 {
@@ -57,6 +156,9 @@ void setup()
   delay(500);
   Serial.println("Started !!");
   delay(1000);
+
+  // initially the first path is considered North
+  path[i++] = 'N';
 }
 void loop()
 {
@@ -65,6 +167,7 @@ void loop()
   Serial.println(error);
   if (error == 100) {
     // Make left turn untill it detects straight path
+    updatePath(path[i - 1], "left");
     do {
       read_sensor_values();
       analogWrite(ENA, 85);
@@ -82,16 +185,21 @@ void loop()
     stop_bot();
     read_sensor_values();
     if (error == 102) {
+      updatePath(path[i - 1], "right");
       do {
         analogWrite(ENA, 85);
         analogWrite(ENB, 85);
         sharpRightTurn();
         read_sensor_values();
       } while (error != 0);
+    } else {
+      // straight
+      updatePath(path[i - 1], "forward");
     }
 
   } else if (error == 102) {
     // Make left turn untill it detects straight path (U Turn)
+    updatePath(path[i - 1], "reverse");
     do {
       analogWrite(ENA, 100);
       analogWrite(ENB, 90);
@@ -121,6 +229,7 @@ void loop()
 
       } else {
         /**** Move Left ****/
+        updatePath(path[i - 1], "left");
         analogWrite(ENA, 85);
         analogWrite(ENB, 85);
         sharpLeftTurn();
