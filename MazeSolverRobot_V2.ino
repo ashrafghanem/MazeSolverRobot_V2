@@ -1,3 +1,6 @@
+#include <SoftwareSerial.h>
+SoftwareSerial hc06(2, 4);
+
 // IR Sensors
 int sensor1 = 12;      // Left most sensor
 int sensor2 = 11;
@@ -9,6 +12,7 @@ int sensor[4] = {0, 0, 0, 0};
 char path[20];
 char optPath[20];
 char flippedOptPath[20];
+int arrSize = 20;
 int i, j = 0;
 
 // Right Motor
@@ -36,7 +40,6 @@ float Kd = 15;
 float error = 0, P = 0, I = 0, D = 0, PID_value = 0;
 float previous_error = 0, previous_I = 0;
 int flag = 0;
-int arrSize = 20;
 
 void flipOptimizedPath() {
   int k = 0;
@@ -80,6 +83,9 @@ void optimizePath() {
 }
 
 void updatePath(prevDirection, currState) {
+  hc06.write(prevDirection);
+  hc06.write('\n');
+
   if (prevDirection == 'N' && currState == "right") {
     path[i++] = 'E';
   }
@@ -153,6 +159,7 @@ void setup()
   //digitalWrite(ledPin2, LOW);
 
   Serial.begin(9600);
+  hc06.begin(38400);
   delay(500);
   Serial.println("Started !!");
   delay(1000);
