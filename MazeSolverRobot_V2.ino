@@ -66,15 +66,15 @@ void optimizePath() {
       i = index = 0;
       continue;
     }
-    optPath[index] = arr[i];
+    optPath[index] = path[i];
 
-    if (arr[i] == 'S' && arr[i + 1] == 'N' || arr[i] == 'N' && arr[i + 1] == 'S') {
+    if (path[i] == 'S' && path[i + 1] == 'N' || path[i] == 'N' && path[i + 1] == 'S') {
       i += 2;
-      optPath[index] = arr[i];
+      optPath[index] = path[i];
     }
-    else if (arr[i] == 'W' && arr[i + 1] == 'E' || arr[i] == 'E' && arr[i + 1] == 'W') {
+    else if (path[i] == 'W' && path[i + 1] == 'E' || path[i] == 'E' && path[i + 1] == 'W') {
       i += 2;
-      optPath[index] = arr[i];
+      optPath[index] = path[i];
     }
 
     i++;
@@ -82,9 +82,9 @@ void optimizePath() {
   }
 }
 
-void updatePath(prevDirection, currState) {
-  hc06.write(prevDirection);
-  hc06.write('\n');
+void updatePath(char prevDirection, String currState) {
+//  hc06.write(prevDirection);
+//  hc06.write('\n');
 
   if (prevDirection == 'N' && currState == "right") {
     path[i++] = 'E';
@@ -170,6 +170,10 @@ void setup()
 void loop()
 {
   read_sensor_values();
+  for(int m=0;m<20;m++){
+    hc06.write(path[m]);
+  }
+  hc06.println('\n');
 
   Serial.println(error);
   if (error == 100) {
@@ -209,7 +213,7 @@ void loop()
     updatePath(path[i - 1], "reverse");
     do {
       analogWrite(ENA, 100);
-      analogWrite(ENB, 90);
+      analogWrite(ENB, 100);
       sharpLeftTurn();
       read_sensor_values();
       if (error == 0) {
