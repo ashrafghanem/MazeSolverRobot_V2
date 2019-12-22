@@ -2,10 +2,10 @@
 SoftwareSerial hc06(2, 4);
 
 // IR Sensors
-int sensor1 = 12;      // Left most sensor
-int sensor2 = 11;
-int sensor3 = 10;
-int sensor4 = 9;      // Right most sensor
+int sensor1 = A0;//12;      // Left most sensor
+int sensor2 = A1;//11;
+int sensor3 = A2;//10;
+int sensor4 = A3;//9;      // Right most sensor
 
 // Initial Values of Sensors (Left to Right)
 int sensor[4] = {0, 0, 0, 0};
@@ -35,7 +35,7 @@ int initial_motor_speed = 85;
 // PID Constants
 float Kp = 25;
 float Ki = 0;
-float Kd = 15;
+float Kd = 10;
 
 float error = 0, P = 0, I = 0, D = 0, PID_value = 0;
 float previous_error = 0, previous_I = 0;
@@ -83,9 +83,6 @@ void optimizePath() {
 }
 
 void updatePath(char prevDirection, String currState) {
-//  hc06.write(prevDirection);
-//  hc06.write('\n');
-
   if (prevDirection == 'N' && currState == "right") {
     path[i++] = 'E';
   }
@@ -137,6 +134,10 @@ void updatePath(char prevDirection, String currState) {
   else if (prevDirection == 'W' && currState == "forward") {
     path[i++] = 'W';
   }
+
+  hc06.println('\n');
+  hc06.write("update ");
+  hc06.println(path[i - 1]);
 }
 
 void setup()
@@ -161,30 +162,35 @@ void setup()
   Serial.begin(9600);
   hc06.begin(38400);
   delay(500);
-  Serial.println("Started !!");
+  hc06.println("Started !!");
   delay(1000);
 
   // initially the first path is considered North
   path[i++] = 'N';
+
+  hc06.write("setup ");
+  hc06.println(path[i - 1]);
 }
 void loop()
 {
-  read_sensor_values();
-  for(int m=0;m<20;m++){
-    hc06.write(path[m]);
-  }
-  hc06.println('\n');
 
-  Serial.println(error);
+  read_sensor_values();
+
+  if (error > 3)
+    hc06.println(error);
+
   if (error == 100) {
+    //    hc06.write("left");
+    //    hc06.println('\n');
+
     // Make left turn untill it detects straight path
-    updatePath(path[i - 1], "left");
     do {
       read_sensor_values();
       analogWrite(ENA, 85);
       analogWrite(ENB, 85);
       sharpLeftTurn();
     } while (error != 0);
+    updatePath(path[i - 1], "left");
 
   } else if (error == 101) {
     // Make right turn in case it detects only right path (it will go into forward
@@ -196,21 +202,30 @@ void loop()
     stop_bot();
     read_sensor_values();
     if (error == 102) {
-      updatePath(path[i - 1], "right");
+      //      hc06.write("right");
+      //      hc06.println('\n');
+
       do {
         analogWrite(ENA, 85);
         analogWrite(ENB, 85);
         sharpRightTurn();
         read_sensor_values();
       } while (error != 0);
+      updatePath(path[i - 1], "right");
+
     } else {
+      //      hc06.write("straight");
+      //      hc06.println('\n');
+
       // straight
       updatePath(path[i - 1], "forward");
     }
 
   } else if (error == 102) {
+    //    hc06.write("U");
+    //    hc06.println('\n');
+
     // Make left turn untill it detects straight path (U Turn)
-    updatePath(path[i - 1], "reverse");
     do {
       analogWrite(ENA, 100);
       analogWrite(ENB, 100);
@@ -221,6 +236,7 @@ void loop()
         delay(200);
       }
     } while (error != 0);
+    updatePath(path[i - 1], "reverse");
 
   } else if (error == 103) {
     // Make left turn untill it detects straight path or stop if dead end reached.
@@ -232,15 +248,23 @@ void loop()
       stop_bot();
       read_sensor_values();
       if (error == 103) {
+        //        hc06.write("stop");
+        //        hc06.println('\n');
         /**** Dead End Reached, Stop! ****/
         stop_bot();
         //digitalWrite(ledPin1, HIGH);
         //digitalWrite(ledPin2, HIGH);
         flag = 1;
+        hc06.println("stop");
+        //        for(int m=0;m<20;m++){
+        //          hc06.write(path[m]);
+        //        }
+        //        hc06.println('\n');
 
       } else {
+        //        hc06.write("left");
+        //        hc06.println('\n');
         /**** Move Left ****/
-        updatePath(path[i - 1], "left");
         analogWrite(ENA, 85);
         analogWrite(ENB, 85);
         sharpLeftTurn();
@@ -251,6 +275,7 @@ void loop()
           analogWrite(ENB, 85);
           sharpLeftTurn();
         } while (error != 0);
+        updatePath(path[i - 1], "left");
       }
     }
 
@@ -260,56 +285,109 @@ void loop()
   }
 }
 
+int convertToDigial(int analogReading) {
+  if (analogReading >= 40) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
 void read_sensor_values()
 {
-  sensor[0] = digitalRead(sensor1);
-  sensor[1] = digitalRead(sensor2);
-  sensor[2] = digitalRead(sensor3);
-  sensor[3] = digitalRead(sensor4);
+  sensor[0] = convertToDigial(analogRead(sensor1));
+  sensor[1] = convertToDigial(analogRead(sensor2));
+  sensor[2] = convertToDigial(analogRead(sensor3));
+  sensor[3] = convertToDigial(analogRead(sensor4));
+
+  Serial.print(sensor[0]);
+  Serial.print(" ");
+  Serial.print(sensor[1]);
+  Serial.print(" ");
+  Serial.print(sensor[2]);
+  Serial.print(" ");
+  Serial.println(sensor[3]);
+
+
 
   // 1000
-  if ((sensor[0] == 1) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 0))
+  if ((sensor[0] == 1) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 0)) {
     error = 3;
+    //    hc06.write("3");
+    //    hc06.println('\n');
+  }
 
   // 1100
-  else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 0) && (sensor[3] == 0))
+  else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 0) && (sensor[3] == 0)) {
     error = 2;
+    //    hc06.write("2");
+    //    hc06.println('\n');
+  }
 
   // 0100
-  else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 0) && (sensor[3] == 0))
+  else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 0) && (sensor[3] == 0)) {
     error = 1;
+    //    hc06.write("1");
+    //    hc06.println('\n');
+  }
 
   // 0110
-  else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 0))
+  else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 0)) {
     error = 0;
+    //    hc06.write("0");
+    //    hc06.println('\n');
+  }
 
   // 0010
-  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 1) && (sensor[3] == 0))
+  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 1) && (sensor[3] == 0)) {
     error = -1;
+    //    hc06.write("-1");
+    //    hc06.println('\n');
+  }
 
   // 0011
-  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 1) && (sensor[3] == 1))
+  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 1) && (sensor[3] == 1)) {
     error = -2;
+    //    hc06.write("-2");
+    //    hc06.println('\n');
+  }
 
   // 0001
-  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 1))
+  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 1)) {
     error = -3;
+    //    hc06.write("-3");
+    //    hc06.println('\n');
+  }
 
   // 1110
-  else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 0)) // Turn robot left side
+  else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 0)) { // Turn robot left side
     error = 100;
+    //    hc06.write("100");
+    //    hc06.println('\n');
+  }
 
   // 0111
-  else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 1)) // Turn robot right side
+  else if ((sensor[0] == 0) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 1)) { // Turn robot right side
     error = 101;
+    //    hc06.write("101");
+    //    hc06.println('\n');
+  }
 
   // 0000
-  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 0)) // Make U turn
+  else if ((sensor[0] == 0) && (sensor[1] == 0) && (sensor[2] == 0) && (sensor[3] == 0)) { // Make U turn
     error = 102;
+    //    hc06.write("102");
+    //    hc06.println('\n');
+  }
 
   // 1111
-  else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 1)) // Turn left side or stop
+  else if ((sensor[0] == 1) && (sensor[1] == 1) && (sensor[2] == 1) && (sensor[3] == 1)) { // Turn left side or stop
     error = 103;
+    //    hc06.write("103");
+    //    hc06.println('\n');
+  }
+
 }
 
 void calculate_pid()
